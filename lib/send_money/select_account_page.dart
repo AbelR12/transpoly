@@ -3,6 +3,7 @@ import 'send_money_page.dart';
 
 class SelectMoneyPage extends StatefulWidget {
   @override
+
   SelectMoneyPageState createState() => SelectMoneyPageState();
 }
 

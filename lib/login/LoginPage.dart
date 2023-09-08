@@ -1,29 +1,50 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:transpoly/fpassword/FpasswordPage.dart';
 import 'package:transpoly/main.dart';
 import 'package:local_auth/local_auth.dart';
-
+import 'package:transpoly/model/users.dart';
 
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
 }
+
 List<int> firt=[1,2,3], second=[4,5,6], third=[7,8,9];
 class _LoginPageState extends State<LoginPage> {
+  bool isLoading = true;
+  User? user = FirebaseAuth.instance.currentUser;
+  UserModel loggedInUser = UserModel();
   String title ="Entrer votre mot de passe";
-  int mdplength=4;
+  int mdplength=6;
   String mdpenter="";
-  String mdpcorrect="1234";
   String vorf="";
   final LocalAuthentication auth = LocalAuthentication();
   _SupportState _supportState = _SupportState.unknown;
   String _authorized = 'Non autorisé';
   bool _isAuthenticating = false;
+  Future<void> fetchUserData() async {
+    try {
+      final userDataSnapshot = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user!.uid)
+          .get();
+      this.loggedInUser = UserModel.fromMap(userDataSnapshot.data());
+    } catch (error) {
+      print("Error fetching user data: $error");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    fetchUserData();
     // Vérifier si le périphérique prend en charge l'authentification biométrique
     auth.isDeviceSupported().then(
           (bool isSupported) => setState(() => _supportState = isSupported
@@ -71,7 +92,6 @@ class _LoginPageState extends State<LoginPage> {
 
     // Naviguer vers MyHomePage si l'authentification réussit
     if (authenticated) {
-      mdpenter="1234";
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => MyHomePage()),
@@ -82,13 +102,13 @@ class _LoginPageState extends State<LoginPage> {
 
   numberClic(int item) {
     // Ajouter le chiffre sélectionné à la variable mdpenter
-    if (mdpenter.length < 4) {  // Vérifier si la longueur est inférieure à 4
+    if (mdpenter.length < 6) {  // Vérifier si la longueur est inférieure à 4
       mdpenter += item.toString();  // Ajouter le chiffre à la variable mdpenter
     }
     // Vérifier si la longueur de mdpenter correspond à la longueur du mot de passe
     if (mdpenter.length == mdplength) {
       // Vérifier si mdpenter correspond au mot de passe correct
-      if (mdpenter == mdpcorrect) {
+      if (mdpenter == loggedInUser.mdp) {
         // Actions à effectuer lorsque le mot de passe est correct
         Navigator.push(
           context,
@@ -101,8 +121,10 @@ class _LoginPageState extends State<LoginPage> {
 
         setState(() {
           // Mettre à jour l'icône en fonction de la correspondance entre mdpenter et mdpcorrect
-          mdpcorrect == mdpenter ? Icons.circle : Icons.circle_outlined;
-
+          loggedInUser.mdp == mdpenter ? Icons.circle : Icons.circle_outlined;
+          print({loggedInUser.nom});
+          print({loggedInUser.mdp});
+          print({mdpenter});
           // Réinitialiser mdpenter à une chaîne vide
           mdpenter = "";
         });
@@ -147,15 +169,20 @@ class _LoginPageState extends State<LoginPage> {
                   child:Icon((mdpenter.length>=3)? Icons.circle:Icons.circle_outlined),),
                 Padding(
                   padding: const EdgeInsets.all(3),
-                  child:Icon((mdpenter.length==4)? Icons.circle: Icons.circle_outlined),),
-
+                  child:Icon((mdpenter.length>=4)? Icons.circle: Icons.circle_outlined),),
+                Padding(
+                  padding: const EdgeInsets.all(3),
+                  child:Icon((mdpenter.length>=5)? Icons.circle: Icons.circle_outlined),),
+                Padding(
+                  padding: const EdgeInsets.all(3),
+                  child:Icon((mdpenter.length==6)? Icons.circle: Icons.circle_outlined),),
               ],
             ),
           ),
           Text(
             vorf,
             style: TextStyle(
-                color: (mdpenter==mdpcorrect)?Colors.green:Colors.red
+                color: (mdpenter==loggedInUser.mdp)?Colors.green:Colors.red
             ),
           ),
           TextButton(onPressed: (){

@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:transpoly/send_money/select_account_page.dart';
+import '../send_money/StatusPage.dart';
 import 'cards.dart';
 
 class HomePage extends StatefulWidget {
+
   @override
   HomePageState createState() => HomePageState();
 }
@@ -11,6 +14,15 @@ class HomePageState extends State<HomePage> {
   double screenWidth = 0.0;
   List<String> names = ['Aka', 'Lembe', 'Diomandé', 'Kacou',"N'dri",'Kouakou','Zeba'];
 
+  late DocumentReference transactionDocRef; // Declare the variable
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize transactionDocRef here
+    transactionDocRef = FirebaseFirestore.instance.collection('histories').doc('uid');
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +82,24 @@ class HomePageState extends State<HomePage> {
                 ),
                 Stack(
                     children: <Widget>[
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TransactionStatusPage(
+                                status: 'Transaction en cours',
+                                message: 'Veuillez patienter, votre transaction est en cours de traitement',
+                                transactionDocRef: transactionDocRef,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.notifications_none,
+                          size: 30.0,
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: new Icon(
@@ -142,8 +172,11 @@ class HomePageState extends State<HomePage> {
                 Container(
                   child: GestureDetector(
                     onTapUp: (tapDetail) {
-                      Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => SelectMoneyPage()),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SelectMoneyPage(),
+                        ),
                       );
                     },
                     child: Card(

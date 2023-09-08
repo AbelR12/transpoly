@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "483246767700",
+    "project_id": "transpoly-4cfee",
+    "storage_bucket": "transpoly-4cfee.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483246767700:android:2c20b04869819f920977c1",
+        "android_client_info": {
+          "package_name": "com.example.transpoly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "483246767700-nf2puqoq9rb3fof5blngatnve8thc1gp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2J46Larb68_sr1bRn5-sQ4TRrw6y97Co"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "483246767700-nf2puqoq9rb3fof5blngatnve8thc1gp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

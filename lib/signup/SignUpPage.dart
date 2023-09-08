@@ -1,6 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:transpoly/login/LoginPage.dart';
+import 'package:transpoly/main.dart';
+import 'package:firebase_database/firebase_database.dart';
+
+import '../model/users.dart';
 
 class SignUp extends StatefulWidget {
   @override
@@ -21,7 +28,10 @@ class _SignUpPageState extends State<SignUp> {
       });
     }
   }
+//firebase
 
+  final _auth = FirebaseAuth.instance;
+  String? errorMessage;
   final _formKey = GlobalKey<FormState>();
   TextEditingController _matriculeController = TextEditingController();
   TextEditingController _nomController = TextEditingController();
@@ -31,7 +41,6 @@ class _SignUpPageState extends State<SignUp> {
   TextEditingController _telephoneController = TextEditingController();
   TextEditingController _mdp1Controller = TextEditingController();
   TextEditingController _mdp2Controller = TextEditingController();
-
   bool _isPasswordMatched = false;
 
   @override
@@ -44,7 +53,7 @@ class _SignUpPageState extends State<SignUp> {
             width: MediaQuery.of(context).size.width * 0.3,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('asset/images/sideImg.png'),
+                image: AssetImage('assets/images/sideImg.png'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -177,7 +186,7 @@ class _SignUpPageState extends State<SignUp> {
                               labelText: "Mot de passe",
                             ),
                             keyboardType: TextInputType.phone,
-                            maxLength: 4,
+                            maxLength: 6,
                             validator: (value) {
                               if (value?.isEmpty ?? false) {
                                 return 'Veuillez entrer votre mdp';
@@ -191,7 +200,7 @@ class _SignUpPageState extends State<SignUp> {
                               hintText: "confirmer le mot de passe",
                             ),
                             keyboardType: TextInputType.phone,
-                            maxLength: 4,
+                            maxLength: 6,
                             validator: (value) {
                               if (value?.isEmpty ?? false) {
                                 return 'Veuillez entrer votre mot de passe';
@@ -212,9 +221,7 @@ class _SignUpPageState extends State<SignUp> {
                                   backgroundColor: MaterialStateProperty.all<Color>(Color(0xffffac30)),
                                 ),
                                 onPressed: () {
-                                  if (_formKey.currentState!.validate() && _isPasswordMatched) {
-                                    Navigator.of(context).push(MaterialPageRoute(builder: (context)=>LoginPage()));
-                                  }
+                                  signUp(_mailController.text, _mdp1Controller.text);
                                 },
                                 child: Text('Creer'),
                               ),
@@ -243,4 +250,113 @@ class _SignUpPageState extends State<SignUp> {
       ),
     );
   }
+  void signUp(String email, String password) async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        await _auth
+            .createUserWithEmailAndPassword(email: email, password: password)
+            .then((value) => {postDetailsToFirestore()})
+            .catchError((e) {
+          Fluttertoast.showToast(msg: e!.message);
+        });
+      } on FirebaseAuthException catch (error) {
+        switch (error.code) {
+          case "invalid-email":
+                     errorMessage = "Votre adresse e-mail semble être malformée.";
+
+                     break;
+          case "wrong-password":
+                     errorMessage = "votre mot de passe est incorrect.";
+                     break;
+          case "user-not-found":
+                     errorMessage = "Utilisateur inexistant.";
+                     break;
+          case "user-disabled":
+                     errorMessage = "L'utilisateur avec cette adresse e-mail a été désactivé.";
+                     break;
+          case "too-many-requests":
+                     errorMessage = "Trop de demandes";
+                     break;
+          case "operation-not-allowed":
+                     errorMessage = "La connexion avec e-mail et mot de passe n'est pas activée.";
+                     break;
+                   default:
+        }            errorMessage = "erreur lors de la connexion.";
+        Fluttertoast.showToast(msg: errorMessage!);
+        print(error.code);
+      }
+    }
+  }
+  postDetailsToFirestore() async {
+
+
+    FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
+    User? user = _auth.currentUser;
+
+    UserModel userModel = UserModel();
+
+    // writing all the values
+    userModel.email = user!.email;
+    userModel.uid = user.uid;
+    userModel.nom = _nomController.text;
+    userModel.prenom = _prenomController.text;
+    userModel.date_naissance=_dateNaissanceController.text;
+    userModel.matricule=_matriculeController.text;
+    userModel.telephone=_telephoneController.text;
+    userModel.mdp=_mdp1Controller.text;
+    await firebaseFirestore
+        .collection("users")
+        .doc(user.uid)
+        .set(userModel.toMap());
+    Fluttertoast.showToast(msg: "Compte creer avec succès :) ");
+
+    Navigator.pushAndRemoveUntil(
+        (context),
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+            (route) => false);
+  }
+  /*postDetailsToRealTimeDatabase() async {
+    //DatabaseReference datapoly = FirebaseDatabase.instance.ref();
+    CollectionReference colref = FirebaseFirestore.instance.collection("users");
+    User? user = _auth.currentUser;
+
+    colref.add({
+      'uid': user!.uid,
+      'nom': _nomController,
+      'prenom': _prenomController,
+      'email': _mailController.text,
+      'matricule':_matriculeController.text,
+      'date de naissance': _dateNaissanceController.text,
+      'telephone':_telephoneController.text,
+    });
+    Fluttertoast.showToast(msg: "Compte creer avec success :) ");
+    Navigator.pushAndRemoveUntil(
+        (context),
+        MaterialPageRoute(builder: (context) => MyHomePage()),
+            (route) => false);
+
+
+    //UserModel userModel = UserModel();
+
+    // writing all the values
+    /*userModel.email = user!.email;
+    userModel.uid = user.uid;
+    userModel.nom = _nomController.text;
+    userModel.prenom = _prenomController.text;
+    userModel.date_naissance=_dateNaissanceController.text;
+    userModel.matricule=_matriculeController.text;
+    userModel.telephone=_telephoneController.text;*/
+
+    /*datapoly
+        .child("users")
+        .push()
+        .set(userModel.toMap()).then((value){
+      Fluttertoast.showToast(msg: "Compte creer avec success :) ");
+      Navigator.pushAndRemoveUntil(
+          (context),
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+              (route) => false);
+    });*/
+
+  }*/
 }
